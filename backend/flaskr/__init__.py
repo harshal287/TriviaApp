@@ -241,7 +241,7 @@ def create_app(test_config=None):
   and shown whether they were correct or not. 
   '''
   @app.route('/quizzes', methods=['POST'])
-  def search_questions():
+  def quizzes():
     body = request.get_json()
     quizCategory = body.get('quizCategory', None)
     previousQuestions = body.get('previousQuestions', None)
