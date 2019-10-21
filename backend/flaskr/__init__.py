@@ -176,7 +176,7 @@ def create_app(test_config=None):
   only question that include that string within their question. 
   Try using the word "title" to start. 
   '''
-  @app.route('/questions/search', methods=['POST'])
+  @app.route('/questionSearch', methods=['POST'])
   def search_questions():
     body = request.get_json()
     search_term = body.get('searchTerm', None)
@@ -240,7 +240,23 @@ def create_app(test_config=None):
   one question at a time is displayed, the user is allowed to answer
   and shown whether they were correct or not. 
   '''
-
+  @app.route('/quizzes', methods=['POST'])
+  def search_questions():
+    body = request.get_json()
+    quizCategory = body.get('quizCategory', None)
+    previousQuestions = body.get('previousQuestions', None)
+    CategoryID = Category.query.filter_by(type=quizCategory)
+    questions = Question.query.filter_by(category = CategoryID.id)
+    formatted_questions = paginate_questions(request,questions)  
+    currentQuestion = Question.query.get(5)
+    if len(formatted_questions) == 0:
+      abort(404)
+    return jsonify({
+        'success': 'True',
+        'previousQuestions':formatted_questions,
+        'currentQuestion':CurrentQuestion
+    })
+  
   '''
   @TODO: 
   Create error handlers for all expected errors 
