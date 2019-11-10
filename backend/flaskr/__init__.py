@@ -51,6 +51,7 @@ def create_app(test_config=None):
     if len(formatted_categories) == 0:
       abort(404)
     return jsonify({
+      'success': True,
       'categories': allcategories
     })
   
@@ -81,14 +82,12 @@ def create_app(test_config=None):
         if len(formatted_questions) == 0:
           abort(404)
         return jsonify({
-          'success': 'True',
+          'success': True,
           'questions': formatted_questions,
           'totalQuestions':len(Question.query.all()),
           'categories': allcategories
         })
-
-  
-
+        
 
   '''
   @TODO: 
@@ -115,7 +114,7 @@ def create_app(test_config=None):
           allcategories.append(category.type)
 
       return jsonify({
-        'success': 'True',
+        'success': True,
         'deleted':question_id,
         'questions':current_questions,
         'totalQuestions':len(Question.query.all()),
@@ -156,7 +155,7 @@ def create_app(test_config=None):
         allcategories.append(category.type)
 
       return jsonify({
-        'success': 'True',
+        'success': True,
         'created':question.id,
         'questions':current_questions,
         'totalQuestions':len(Question.query.all()),
@@ -190,7 +189,7 @@ def create_app(test_config=None):
     if len(formatted_questions) == 0:
       abort(404)
     return jsonify({
-        'success': 'True',
+        'success': True,
         'questions':formatted_questions,
         'totalQuestions':len(Question.query.all()),
         'categories': allcategories,
@@ -220,7 +219,7 @@ def create_app(test_config=None):
     if len(formatted_questions) == 0:
       abort(404)
     return jsonify({
-      'success': 'True',
+      'success': True,
       'questions': formatted_questions,
       'totalQuestions':len(Question.query.all()),
       'categories': allcategories,
@@ -243,107 +242,28 @@ def create_app(test_config=None):
   @app.route('/quizzes', methods=['POST'])
   def quizzes():
     body = request.get_json()
-    quizCategory = body.get('quizCategory', None)
-    previousQuestions = body.get('previousQuestions', None)
-    currentQuestion = {"answer":"Escher","category":2,"difficulty":1,"id":16,"question":"Where is Taj Mahal?"}
-    #currentQuestion = "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?"
-    previousQuestions = [
-    {
-      "answer": "Apollo 13",
-      "category": 5,
-      "difficulty": 4,
-      "id": 2,
-      "question": "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?"
-    },
-    {
-      "answer": "Tom Cruise",
-      "category": 5,
-      "difficulty": 4,
-      "id": 4,
-      "question": "What actor did author Anne Rice first denounce, then praise in the role of her beloved Lestat?"
-    },
-    {
-      "answer": "Maya Angelou",
-      "category": 4,
-      "difficulty": 2,
-      "id": 5,
-      "question": "Whose autobiography is entitled 'I Know Why the Caged Bird Sings'?"
-    },
-    {
-      "answer": "Edward Scissorhands",
-      "category": 5,
-      "difficulty": 3,
-      "id": 6,
-      "question": "What was the title of the 1990 fantasy directed by Tim Burton about a young man with multi-bladed appendages?"
-    },
-    {
-      "answer": "Brazil",
-      "category": 6,
-      "difficulty": 3,
-      "id": 10,
-      "question": "Which is the only team to play in every soccer World Cup tournament?"
-    },
-    {
-      "answer": "Uruguay",
-      "category": 6,
-      "difficulty": 4,
-      "id": 11,
-      "question": "Which country won the first ever soccer World Cup in 1930?"
-    },
-    {
-      "answer": "George Washington Carver",
-      "category": 4,
-      "difficulty": 2,
-      "id": 12,
-      "question": "Who invented Peanut Butter?"
-    },
-    {
-      "answer": "The Palace of Versailles",
-      "category": 3,
-      "difficulty": 3,
-      "id": 14,
-      "question": "In which royal palace would you find the Hall of Mirrors?"
-    },
-    {
-      "answer": "Agra",
-      "category": 3,
-      "difficulty": 2,
-      "id": 15,
-      "question": "The Taj Mahal is located in which Indian city?"
-    },
-    {
-      "answer": "Escher",
-      "category": 2,
-      "difficulty": 1,
-      "id": 16,
-      "question": "Which Dutch graphic artist\u2013initials M C was a creator of optical illusions?"
-    }]
-    
-    '''
-    CategoryQuiz = Category.query.filter_by(type = quizCategory)
-    
-    for cat in CategoryQuiz:
-      catId = cat.id
-    questions = Question.query.filter(Question.category == catId)
+    quizCategory = body.get('quiz_category', None)
+    previousQuestions = body.get('previous_questions', None)
+    print(quizCategory['id'])
+    print(previousQuestions)
+    questions = Question.query.filter(Question.category == quizCategory['id'])
     formatted_questions = paginate_questions(request,questions)
-    for catergoryID in CategoryQuiz:
-        id = catergoryID.id
-    questions = Question.query.filter(Question.category==id)
-    formatted_questions = paginate_questions(request,questions)  
-    currentQuestion = Question.query.get(5)
     if len(formatted_questions) == 0:
       abort(404)
-    
-    return jsonify({
-        'success': 'True',
-        'previousQuestions':formatted_questions,
-        'currentQuestion':CurrentQuestion
-    })
-    '''
+    questionsList = []
+    for listOfQues in formatted_questions:
+      questionsList.append(listOfQues['id'])
+    for previous in previousQuestions:
+      if previous in questionsList: questionsList.remove(previous)
+    if len(questionsList) == 0:
+      abort(404)
+    currentQuestion = Question.query.filter(Question.id == random.choice(questionsList))
+    currentQuestion = paginate_questions(request, currentQuestion)
+    currentQuestion = currentQuestion[0]
     return jsonify({
         'showAnswer': 'false',
-        'success': 'True',
-        'currentQuestion': currentQuestion,
+        'success': True,
+        'question': currentQuestion,
         'previousQuestions': previousQuestions,
     })
   
@@ -352,6 +272,22 @@ def create_app(test_config=None):
   Create error handlers for all expected errors 
   including 404 and 422. 
   '''
+
+  @app.errorhandler(404)
+  def not_found(error):
+    return jsonify({
+         "success": False, 
+         "error": 404,
+         "message": "Not found"
+    }), 404
+  @app.errorhandler(422)
+  def not_processable(error):
+    return jsonify({
+         "success": False, 
+         "error": 422,
+         "message": "Not Processable"
+    }), 422
+
   
   return app
 
